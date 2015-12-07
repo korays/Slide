@@ -12,19 +12,23 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.preference.CheckBoxPreference;
+import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.preference.PreferenceScreen;
 import android.preference.SwitchPreference;
 import android.support.v7.app.ActionBar;
-import android.util.Log;
 import android.view.MenuItem;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -39,9 +43,7 @@ import java.util.List;
  */
 public class SettingsActivity extends AppCompatPreferenceActivity {
 
-    public static final String KEY_INT_MEM_PATH = "internal_path";
-    public static final String KEY_EXT_MEM_PATH = "external_path";
-
+    // Boolean to detect if listener runs for the first time at activity start
     private static boolean initialized = false;
 
 
@@ -71,7 +73,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     final SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(preference.getContext());
                     // Don't show time picker when settings opened for the first time
                     if (initialized) {
-                        Log.w("siktir", "show timepicker  " + preference.getKey());
                         final Calendar currentCalendar = Calendar.getInstance();
                         // Get current time
                         final int day = currentCalendar.get(Calendar.DAY_OF_YEAR);
@@ -121,9 +122,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 // simple string representation.
                 preference.setSummary(stringValue);
             }
-
-            Log.w("siktir", "pref: " + preference.getKey() + " value: " + value + " initialized: " + initialized);
-
 
             return true;
         }
@@ -224,7 +222,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     }
 
     /**
-     * This fragment shows general preferences only. It is used when the
+     * This fragment shows source preferences only. It is used when the
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -235,8 +233,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_source);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference(KEY_INT_MEM_PATH));
-            findPreference(KEY_INT_MEM_PATH).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            bindPreferenceSummaryToValue(findPreference("internal_path"));
+            findPreference("internal_path").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
                     Intent fileIntent = new Intent(getActivity(), FileChooser.class);
@@ -245,8 +243,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     return false;
                 }
             });
-            bindPreferenceSummaryToValue(findPreference(KEY_EXT_MEM_PATH));
-            findPreference(KEY_EXT_MEM_PATH).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            bindPreferenceSummaryToValue(findPreference("external_path"));
+            findPreference("external_path").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
                     Intent fileIntent = new Intent(getActivity(), FileChooser.class);
@@ -272,7 +270,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         public void onActivityResult(int requestCode, int resultCode, Intent data) {
             super.onActivityResult(requestCode, resultCode, data);
             if (resultCode == RESULT_OK) {
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
                 String sourceType = data.getStringExtra("source_type");
                 String prefKey;
                 if (sourceType.equals("dropbox")) {
@@ -298,7 +297,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     }
 
     /**
-     * This fragment shows notification preferences only. It is used when the
+     * This fragment shows animation preferences only. It is used when the
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -335,8 +334,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             initialized = false;
             bindPreferenceSummaryToValue(findPreference("start_timer"));
             bindPreferenceSummaryToValue(findPreference("stop_timer"));
-            //bindPreferenceSummaryToValue(findPreference("boot_start"));
-            //bindPreferenceSummaryToValue(findPreference("charge_start"));
         }
 
         @Override
@@ -351,7 +348,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     }
 
     /**
-     * This fragment shows data and sync preferences only. It is used when the
+     * This fragment shows save & load settings preferences only. It is used when the
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -362,8 +359,99 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             addPreferencesFromResource(R.xml.pref_save_load);
             setHasOptionsMenu(true);
 
-            bindPreferenceSummaryToValue(findPreference("save"));
+
+            EditTextPreference savePreference = (EditTextPreference) findPreference("save");
+
+            final SharedPreferences savePrefs = getActivity().getSharedPreferences("save_settings", MODE_PRIVATE);
+            int savedCount = savePrefs.getInt("saved_settings_count", 0);
+            if (savedCount != 0) {
+                PreferenceScreen screen = getPreferenceScreen();
+                PreferenceCategory category = new PreferenceCategory(getActivity());
+                category.setKey("load_category");
+                category.setTitle("Load Settings");
+                screen.addPreference(category);
+                for (int i = 0; i < savedCount; i++) {
+                    String savedProfile = savePrefs.getString("saved_setting_" + i, "");
+                    category.addPreference(createLoadPref(getActivity(), savedProfile));
+                }
+                setPreferenceScreen(screen);
+            }
+
+
+            savePreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object o) {
+                    PreferenceCategory category;
+                    if (findPreference("load_category") == null) {
+                        category = new PreferenceCategory(getActivity());
+                        category.setKey("load_category");
+                        category.setTitle("Load Settings");
+                    } else {
+                        category = (PreferenceCategory) findPreference("load_category");
+                    }
+
+                    // Update saved profile counter
+                    int savedCount = savePrefs.getInt("saved_settings_count", 0);
+                    savePrefs.edit().putInt("saved_settings_count", savedCount + 1).apply();
+
+                    // Store profile name to savePrefs
+                    String profileName = o.toString();
+                    savePrefs.edit().putString("saved_setting_" + savedCount, profileName).apply();
+
+                    // Create new Preferences and copy all default preferences to new profile preferences.
+                    SharedPreferences defPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                    SharedPreferences profilePrefs = getActivity().getSharedPreferences(profileName, MODE_PRIVATE);
+                    copyPrefs(defPrefs, profilePrefs);
+
+                    PreferenceScreen screen = getPreferenceScreen();
+
+
+                    screen.addPreference(category);
+                    category.addPreference(createLoadPref(getActivity(), o.toString()));
+                    setPreferenceScreen(screen);
+                    Toast.makeText(getActivity(), "Settings saved!", Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+            });
+
+
         }
+
+        private Preference createLoadPref(final Context context, final String loadName) {
+            Preference loadPref = new Preference(context);
+            loadPref.setTitle(loadName);
+            loadPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    SharedPreferences defPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+                    SharedPreferences loadPrefs = context.getSharedPreferences(loadName, MODE_PRIVATE);
+                    copyPrefs(loadPrefs, defPrefs);
+                    Toast.makeText(getActivity(), "Settings loaded!", Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+            });
+            return loadPref;
+        }
+
+        private static void copyPrefs(SharedPreferences from, SharedPreferences to) {
+            SharedPreferences.Editor ed = to.edit();
+            for(Map.Entry<String,?> entry : from.getAll().entrySet()){
+                Object v = entry.getValue();
+                String key = entry.getKey();
+                if(v instanceof Boolean)
+                    ed.putBoolean(key, (Boolean) v);
+                else if(v instanceof Float)
+                    ed.putFloat(key, (Float) v);
+                else if(v instanceof Integer)
+                    ed.putInt(key, (Integer) v);
+                else if(v instanceof Long)
+                    ed.putLong(key, (Long) v);
+                else if(v instanceof String)
+                    ed.putString(key, ((String)v));
+            }
+            ed.apply();
+        }
+
 
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
@@ -375,5 +463,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             return super.onOptionsItemSelected(item);
         }
     }
+
 
 }
