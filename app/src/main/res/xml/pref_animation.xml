@@ -1,0 +1,19 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Hide buttons to simplify the UI. Users can touch outside the dialog to
+         dismiss it. -->
+    <ListPreference
+        android:defaultValue="fade"
+        android:entries="@array/pref_animation_type_titles"
+        android:entryValues="@array/pref_animation_type_values"
+        android:key="animation_type"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:title="@string/pref_title_animation_type" />
+
+    <solveast.slide.NumberPickerPreference
+        android:defaultValue="3"
+        android:title="Slide period"
+        android:key="slide_period"/>
+
+</PreferenceScreen>

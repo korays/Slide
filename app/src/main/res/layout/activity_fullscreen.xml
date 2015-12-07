@@ -1,0 +1,39 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    tools:context="solveast.slide.FullscreenActivity">
+
+    <!-- The primary full-screen view. -->
+
+    <ImageView
+        android:id="@+id/fullscreen_slide"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:keepScreenOn="true"/>
+
+    <TextView
+        android:id="@+id/slideEmptyText"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="Add images to slide-show in settings/source."
+        android:textColor="@android:color/white"
+        android:visibility="gone"/>
+
+
+    <!-- This FrameLayout insets its children based on system windows using
+         android:fitsSystemWindows. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true">
+
+        <include
+            android:id="@+id/tool_bar"
+            layout="@layout/toolbar"/>
+
+    </FrameLayout>
+
+</FrameLayout>

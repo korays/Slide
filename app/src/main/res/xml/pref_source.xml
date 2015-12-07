@@ -1,0 +1,24 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <Preference
+        android:key="internal_path"
+        android:summary="Chose images folder to add to slide-show"
+        android:title="Internal Memory">
+    </Preference>
+
+
+    <Preference
+        android:key="external_path"
+        android:summary="Chose images folder to add to slide-show"
+        android:title="External Memory">
+    </Preference>
+
+
+    <Preference
+        android:key="dropbox"
+        android:summary="Get images from your Dropbox account"
+        android:title="Dropbox">
+    </Preference>
+
+
+</PreferenceScreen>

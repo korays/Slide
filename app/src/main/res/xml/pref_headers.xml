@@ -1,0 +1,25 @@
+<preference-headers xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <header
+        android:fragment="solveast.slide.SettingsActivity$SourcePreferenceFragment"
+        android:icon="@drawable/ic_folder_open_24dp"
+        android:title="@string/pref_header_source" >
+    </header>
+
+    <header
+        android:fragment="solveast.slide.SettingsActivity$AnimationPreferenceFragment"
+        android:icon="@drawable/ic_theaters_24dp"
+        android:title="Animation" >
+    </header>
+
+    <header
+        android:fragment="solveast.slide.SettingsActivity$TimerPreferenceFragment"
+        android:icon="@drawable/ic_schedule_24dp"
+        android:title="@string/pref_header_timer" />
+
+    <header
+        android:fragment="solveast.slide.SettingsActivity$SaveLoadPreferenceFragment"
+        android:icon="@drawable/ic_save_24dp"
+        android:title="@string/pref_header_save_load" />
+
+</preference-headers>

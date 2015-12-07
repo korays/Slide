@@ -1,0 +1,24 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="boot_start"
+        android:title="Start at boot"/>
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="charge_start"
+        android:title="Start on charge"/>
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="start_timer"
+        android:title="Start Timer" />
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="stop_timer"
+        android:title="Stop Timer" />
+
+
+</PreferenceScreen>
