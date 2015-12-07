@@ -11,7 +11,6 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -79,9 +78,8 @@ public class FullscreenActivity extends AppCompatActivity {
     {
         public void run()
         {
-            animateandSlideShow();
+            animateAndSlideShow();
             mHideHandler.postDelayed(this, slideDuration * 1000);
-            Log.w("siktir", "slide runnable run");
         }
     };
 
@@ -132,6 +130,10 @@ public class FullscreenActivity extends AppCompatActivity {
 
         if (images.isEmpty()) {
             findViewById(R.id.slideEmptyText).setVisibility(View.VISIBLE);
+            slideView.setImageResource(R.drawable.empty_drawable);
+        } else if (images.size() == 1) {
+            findViewById(R.id.slideEmptyText).setVisibility(View.GONE);
+            Picasso.with(FullscreenActivity.this).load(new File(images.get(0))).into(slideView);
         } else {
             findViewById(R.id.slideEmptyText).setVisibility(View.GONE);
             mHideHandler.postDelayed(slideRunnable, 0);
@@ -155,7 +157,6 @@ public class FullscreenActivity extends AppCompatActivity {
             addImagePathsToList(dropboxPath);
         }
         String animationType = prefs.getString("animation_type", "fade");
-        Log.w("siktir", "animation typee " + animationType);
         if (!animationType.isEmpty()) {
             switch (animationType) {
                 case "fade":
@@ -167,10 +168,12 @@ public class FullscreenActivity extends AppCompatActivity {
                     animationIdOut = R.anim.rotate_out;
                     break;
                 case "left":
-
+                    animationIdIn = R.anim.left_in;
+                    animationIdOut = R.anim.left_out;
                     break;
                 case "right":
-
+                    animationIdIn = R.anim.right_in;
+                    animationIdOut = R.anim.right_out;
                     break;
             }
         }
@@ -178,7 +181,6 @@ public class FullscreenActivity extends AppCompatActivity {
         slideDuration = prefs.getInt("slide_period", 3);
 
         boolean startTimer = prefs.getBoolean("start_timer", false);
-        Log.w("siktir", "start timer boolean " + startTimer);
         if (startTimer) {
             setStartAlarm(prefs.getLong("start_timer_timeInMillis", 0));
         }
@@ -249,19 +251,17 @@ public class FullscreenActivity extends AppCompatActivity {
     }
 
     /**
-     * Helper method to start the animation on the splash screen
+     * Helper method to animate image changes
      */
-    private void animateandSlideShow() {
-
+    private void animateAndSlideShow() {
         Animation animationOut = AnimationUtils.loadAnimation(this, animationIdOut);
         slideView.startAnimation(animationOut);
-
 
         final Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                // Delayed animation for 'slide in' after 'slide out'
+                // Delayed animation for 'slide in' after 'slide out' completes
                 if (!images.isEmpty()) {
                     Picasso.with(FullscreenActivity.this).load(new File(images.get(currentImageIndex % images.size()))).into(slideView);
                     Animation animationIn = AnimationUtils.loadAnimation(FullscreenActivity.this, animationIdIn);
@@ -271,7 +271,6 @@ public class FullscreenActivity extends AppCompatActivity {
         }, animationOut.getDuration());
 
         currentImageIndex++;
-
     }
 
     private void setStartAlarm(long timeInMillis) {
@@ -282,7 +281,6 @@ public class FullscreenActivity extends AppCompatActivity {
                 FullscreenActivity.this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Log.w("siktir", "alarm set to " + timeInMillis);
 
         // Set alarm manager to given timeInMillis
         alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent);

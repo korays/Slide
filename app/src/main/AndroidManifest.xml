@@ -41,7 +41,7 @@
         <activity
             android:name="com.dropbox.client2.android.AuthActivity"
             android:configChanges="orientation|keyboard"
-            android:launchMode="singleTask"
+            android:clearTaskOnLaunch="true"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Light.NoTitleBar">
             <intent-filter>

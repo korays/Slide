@@ -11,7 +11,6 @@ import android.util.Log;
 public class AppStartBroadcastReceiver extends BroadcastReceiver{
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.w("siktir", "intent action" + intent.getAction());
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         if(intent.getAction().equalsIgnoreCase(Intent.ACTION_POWER_CONNECTED)) {
             if (prefs.getBoolean("charge_start", true)) {

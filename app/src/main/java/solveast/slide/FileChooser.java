@@ -40,19 +40,25 @@ public class FileChooser extends AppCompatActivity {
 
     private static final String[] AVAILABLE_IMG_EXT = new String[]{"jpg", "gif", "png", "bmp", "webp"};
 
+    final static private String TAG = "FileChooser Activity";
+
     final static private String DROPBOX_APP_KEY = "c6fmg0pcsrrom3h";
     final static private String DROPBOX_APP_SECRET = "oaiegitwz72d114";
 
     private DropboxAPI<AndroidAuthSession> mDBApi;
+    // Dropbox account name
     private String dropboxName;
+
+    // Path in Dropbox
     private String dropboxPath;
 
-    private File currentDir;
-    private FileArrayAdapter adapter;
+    // Thumb images paths in cache
+    private List<String> thumbCachePaths = new ArrayList<>();
 
-    private String sourceType;
-    private boolean dirContainsImage;
+    // Path to dir that Dropbox images downloaded
+    private String dropboxCacheDirPath = "";
 
+    // Dropbox dir entries
     private Entry dirent;
     private FileOutputStream mFos;
 
@@ -60,8 +66,13 @@ public class FileChooser extends AppCompatActivity {
     //private Long mFileLen;
     private String mErrorMsg;
 
-    private List<String> thumbCachePaths = new ArrayList<>();
-    private String dropboxCacheDirPath = "";
+    private File currentDir;
+
+    private FileArrayAdapter adapter;
+
+    private String sourceType;
+    private boolean dirContainsImage;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -104,6 +115,10 @@ public class FileChooser extends AppCompatActivity {
 
     }
 
+    /**
+     * Method to fill the files list for local directories.
+     * @param f Current directory
+     */
     private void fill(File f) {
         File[] dirs = f.listFiles();
         this.setTitle("Dir : " + f.getName());
@@ -126,26 +141,31 @@ public class FileChooser extends AppCompatActivity {
                     if (buf <= 1) num_item = num_item + " item";
                     else num_item = num_item + " items";
 
+                    // It is a directory so assign directory icon
                     dir.add(new Item(ff.getName(), num_item, date_modify, ff.getAbsolutePath(), R.drawable.directory_icon));
                 } else {
                     String fName = ff.getName();
                     String extension = fName.substring(fName.lastIndexOf(".") + 1);
+
+                    // If file extension one of available image extensions assign image icon.
                     if (Arrays.asList(AVAILABLE_IMG_EXT).contains(extension.toLowerCase())) {
                         fls.add(new Item(ff.getName(), ff.length() + " Byte", date_modify, ff.getAbsolutePath(), R.drawable.file_image));
                         dirContainsImage = true;
                     } else {
+                        // If file is not available image, assign file image for all file types
                         fls.add(new Item(ff.getName(), ff.length() + " Byte", date_modify, ff.getAbsolutePath(), R.drawable.file_icon));
                     }
                 }
             }
         } else {
-            Log.e("FileChooser Activity", "null dir");
+            Log.e(TAG, "null dir");
         }
 
         Collections.sort(dir);
         Collections.sort(fls);
         dir.addAll(fls);
 
+        // if current directory is not internal or external root add parent dir item
         if (!currentDir.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath()) && !currentDir.getAbsolutePath().equals("/")){
             dir.add(0, new Item("..", "Parent Directory", "", f.getParent(), R.drawable.directory_up));
         }
@@ -215,21 +235,29 @@ public class FileChooser extends AppCompatActivity {
             }
         });
     }
+
+    /**
+     * Delete cached dropbox images before downloading new ones.
+     * @param dir directory to clean
+     */
     private static void cleanDropboxCacheDir(File dir) {
         try {
             if (dir != null && dir.isDirectory()) {
                 for(File file: dir.listFiles()) {
                     if (!file.delete()) {
-                        Log.e("FileChooser Activity", file.getPath() + " couldnt be deleted");
+                        Log.e(TAG, file.getPath() + " couldn't be deleted.");
                     }
                 }
             }
         } catch (Exception e) {
-            Log.e("FileChooser Activity", e.getLocalizedMessage());
+            Log.e(TAG, e.getLocalizedMessage());
         }
     }
 
-
+    /**
+     * Method to remind user to select directory
+     * by toolbar buttons if user clicks on a file.
+     */
     private void onFileClick() {
         showToast("You can select this folder in toolbar!");
         View select = findViewById(R.id.action_select);
@@ -269,6 +297,7 @@ public class FileChooser extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+        // After dropbox authentication store token and start asynctask to get files.
         if (sourceType.equals("dropbox")) {
             if (mDBApi != null && mDBApi.getSession().authenticationSuccessful()) {
                 try {
@@ -281,6 +310,8 @@ public class FileChooser extends AppCompatActivity {
                 } catch (IllegalStateException e) {
                     Log.i("DbAuthLog", "Error authenticating", e);
                 }
+            } else {
+                showToast("Authentication failed!");
             }
         }
     }
@@ -318,10 +349,9 @@ public class FileChooser extends AppCompatActivity {
                 // Delete token to reset authentication
                 storeToken("");
                 intent.putExtra("dropbox_cache_path", "");
-            } else {
-                intent.putExtra("source_type", sourceType);
-                intent.putExtra("image_source_path", "");
             }
+            intent.putExtra("source_type", sourceType);
+            intent.putExtra("image_source_path", "");
             setResult(RESULT_OK, intent);
 
             finish();
@@ -348,7 +378,7 @@ public class FileChooser extends AppCompatActivity {
                         try {
                             mFos.close();
                         } catch (IOException e) {
-                            Log.e("FileChooser Activity", e.getLocalizedMessage());
+                            Log.e(TAG, e.getLocalizedMessage());
                         }
                     }
                 }
@@ -363,13 +393,12 @@ public class FileChooser extends AppCompatActivity {
                 for (Entry ent : dirent.contents) {
                     if (ent.thumbExists) {
                         String cachePath = FileChooser.this.getCacheDir().getAbsolutePath() + "/thumb-" + ent.fileName();
-                        Log.w("siktir", "cache:  " + cachePath);
                         if (!new File(cachePath).exists()) {
                             try {
                                 mFos = new FileOutputStream(cachePath);
                             } catch (FileNotFoundException e) {
                                 mErrorMsg = "Couldn't create a local file to store the image";
-                                Log.e("siktir", mErrorMsg);
+                                Log.e(TAG, mErrorMsg);
                                 return false;
                             }
 
@@ -417,7 +446,7 @@ public class FileChooser extends AppCompatActivity {
                         try {
                             mFos.close();
                         } catch (IOException e) {
-                            Log.e("FileChooser Activity", e.getLocalizedMessage());
+                            Log.e(TAG, e.getLocalizedMessage());
                         }
                     }
                 }
@@ -427,26 +456,24 @@ public class FileChooser extends AppCompatActivity {
         @Override
         protected Boolean doInBackground(String... params) {
             try {
-                //dirent = mDBApi.metadata(params[0], 1000, null, true, null);
+                dropboxCacheDirPath = FileChooser.this.getCacheDir().getAbsolutePath() + "/Dropbox";
+                File cacheDir = new File(dropboxCacheDirPath);
+                if (!cacheDir.exists()) {
+                    if (cacheDir.mkdir()) {
+                        Log.d("FileChooser Activity", "Dropbox cache dir created");
+                    }
+                } else {
+                    cleanDropboxCacheDir(cacheDir);
+                }
                 for (Entry ent : dirent.contents) {
                     if (ent.thumbExists) {
-                        dropboxCacheDirPath = FileChooser.this.getCacheDir().getAbsolutePath() + "/Dropbox";
-                        //String dropboxCacheDirPath = Environment.getExternalStorageDirectory().getPath() + "/Dropbox";
-                        File cacheDir = new File(dropboxCacheDirPath);
-                        if (!cacheDir.exists()) {
-                            if (cacheDir.mkdir()) {
-                                Log.d("FileChooser Activity", "Dropbox cache dir created");
-                            }
-                        } else {
-                            cleanDropboxCacheDir(cacheDir);
-                        }
                         String cacheImagePath = dropboxCacheDirPath + "/" + ent.fileName();
                         if (!new File(cacheImagePath).exists()) {
                             try {
                                 mFos = new FileOutputStream(cacheImagePath);
                             } catch (FileNotFoundException e) {
                                 mErrorMsg = "Couldn't create a local file to store the image";
-                                Log.e("siktir", mErrorMsg);
+                                Log.e(TAG, mErrorMsg);
                                 return false;
                             }
 
